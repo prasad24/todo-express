@@ -1,9 +1,19 @@
 import pool from '../lib/database';
 
+//Get todo by id
+export const getById = ((req, res) => {
+
+    const {id} = req.params;
+
+    pool.query("select * from todo where id = ?", id, (error, result, field) => {
+            res.status(200).json({error: false, data: result});
+    });
+});
+
+
 //Get all todos.
 export const getAll = ((req, res) => {
     pool.query("select * from todo", (error, result, field) => {
-            console.log(error, result, field);
             res.status(200).json({error: false, data: result});
     });
 });
@@ -28,7 +38,6 @@ export const create = ((req, res) => {
     }
 
     pool.query("insert into todo SET ?", todo, (error, result, field) => {
-            console.log(error, result, field);
             res.status(201).json({error: false, id: result.insertId});
     });
     //OR by creating a new connection

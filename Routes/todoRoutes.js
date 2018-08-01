@@ -1,7 +1,11 @@
 import express from 'express';
-import * as todo from '../controllers/todo';
+import * as todo from '../controllers/todoController';
 
 const router = express.Router();
+
+router.get("/:id", (req, res) => {
+    todo.getById(req, res);
+});
 
 router.get("/", (req, res) => {
     todo.getAll(req, res);
