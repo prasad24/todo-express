@@ -39,10 +39,15 @@ export const update = ((req, res) => {
     todo.dateUpdated = new Date();
 
     pool.query("update todo set ? where id = ?", [todo, id], (error, result, field) => {
-            if(result.affectedRows === 0) {
-                return res.status(400).json({error: true, message: 'Cannot find todo!'});
-            }
-            res.status(200).json({error: false});
+        if(error) {
+            console.log(`error updating todo {id}`, error);
+            return res.status(500).json({error: true, message: 'Unable to update todo'});
+        }
+
+        if(result.affectedRows === 0) {
+            return res.status(400).json({error: true, message: 'Cannot find todo!'});
+        }
+        res.status(200).json({error: false});
     });
 });
 
@@ -56,10 +61,15 @@ export const remove = ((req, res) => {
     }
 
     pool.query("delete from todo where id = ?", id, (error, result, field) => {
-            if(result.affectedRows === 0) {
-                return res.status(400).json({error: true, message: 'Cannot find todo!'});
-            }
-            res.status(200).json({error: false});
+        if(error) {
+            console.log(`error deleting todo {id}`, error);
+            return res.status(500).json({error: true, message: 'Unable to delete todo'});
+        }
+
+        if(result.affectedRows === 0) {
+            return res.status(400).json({error: true, message: 'Cannot find todo!'});
+        }
+        res.status(200).json({error: false});
     });
 });
 
@@ -69,7 +79,12 @@ export const getById = ((req, res) => {
     const {id} = req.params;
 
     pool.query("select * from todo where id = ?", id, (error, result, field) => {
-            res.status(200).json({error: false, data: result});
+        if(error) {
+            console.log(`error getting todo {id}`, error);
+            return res.status(500).json({error: true, message: 'Unable to get todo'});
+        }
+
+        res.status(200).json({error: false, data: result});
     });
 });
 
@@ -77,7 +92,11 @@ export const getById = ((req, res) => {
 //Get all todos.
 export const getAll = ((req, res) => {
     pool.query("select * from todo", (error, result, field) => {
-            res.status(200).json({error: false, data: result});
+        if(error) {
+            console.log(`error getting all todos`, error);
+            return res.status(500).json({error: true, message: 'Unable to get todos'});
+        }
+        res.status(200).json({error: false, data: result});
     });
 });
 
@@ -101,7 +120,12 @@ export const create = ((req, res) => {
     }
 
     pool.query("insert into todo SET ?", todo, (error, result, field) => {
-            res.status(201).json({error: false, id: result.insertId});
+        if(error) {
+            console.log(`error inserting todo`, error);
+            return res.status(500).json({error: true, message: 'Unable to add the todo'});
+        }
+
+        res.status(201).json({error: false, id: result.insertId});
     });
     //OR by creating a new connection
     // pool.getConnection((error, connection) => {
