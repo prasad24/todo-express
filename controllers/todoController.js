@@ -36,6 +36,8 @@ export const update = ((req, res) => {
         }
     }
 
+    todo.dateUpdated = new Date();
+
     pool.query("update todo set ? where id = ?", [todo, id], (error, result, field) => {
             if(result.affectedRows === 0) {
                 return res.status(400).json({error: true, message: 'Cannot find todo!'});
