@@ -1,11 +1,19 @@
 import express from 'express';
+import dotenv from 'dotenv';
 
+//create an express instance
 const app = express();
+
+//Set the dotenv config
+app.set(dotenv.config());
+
+//set the listening PORT
+const PORT = process.env.PORT || 5000; //default port 5000
 
 app.get("/", (req, res) => {
     res.json({app: "ToDo app"});
 });
 
-app.listen(5000, () => {
-    console.log('Listening on port 5000');
+app.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`);
 });
