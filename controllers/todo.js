@@ -1,5 +1,14 @@
 import pool from '../lib/database';
 
+//Get all todos.
+export const getAll = ((req, res) => {
+    pool.query("select * from todo", (error, result, field) => {
+            console.log(error, result, field);
+            res.status(200).json({error: false, data: result});
+    });
+});
+
+
 //Add a new todo
 export const create = ((req, res) => {
 
