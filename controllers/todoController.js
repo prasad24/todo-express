@@ -1,5 +1,22 @@
 import pool from '../lib/database';
 
+//remove todo by id
+export const remove = ((req, res) => {
+
+    const {id} = req.params;
+
+    if(!id) {
+        return res.status(400).json({error: true, message: 'id has not been provided'});
+    }
+
+    pool.query("delete from todo where id = ?", id, (error, result, field) => {
+            if(result.affectedRows === 0) {
+                return res.status(400).json({error: true, message: 'Cannot find todo!'});
+            }
+            res.status(200).json({error: false});
+    });
+});
+
 //Get todo by id
 export const getById = ((req, res) => {
 
@@ -25,11 +42,11 @@ export const create = ((req, res) => {
     const todo = req.body;
 
     if(!todo) {
-        return res.status(404).json({error: 'message has not been provided'});
+        return res.status(400).json({error:true, message: 'message has not been provided'});
     }
 
     if(!todo.message.trim()) {
-        return res.status(404).json({error: 'message is required'});
+        return res.status(400).json({error:true, message: 'message is required'});
     }
 
     //If complete is not provided, set it as false

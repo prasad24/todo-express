@@ -15,4 +15,8 @@ router.post("/", (req, res) => {
     todo.create(req, res);
 });
 
+router.delete("/:id", (req, res) => {
+    todo.remove(req, res);
+});
+
 export default router;
