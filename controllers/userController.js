@@ -8,6 +8,32 @@ import uuid from 'uuid/v1';
 
 import * as responseStatus from '../lib/responseStatus';
 
+export const login = ((req, res) => {
+    const {email, password} = req.body;
+
+    if(!email && !password) {
+        return responseStatus.sendError(res, 'Please provide the login credentials');
+    }
+
+    pool.query('select * from users where email=?', email, (error, results, fields) => {
+        if(error) {
+            return responseStatus.sendError(res, 'Unable to login', 500);
+        }
+        if(results.length > 0) {
+            //Validate Password
+            if(utils.validatePassword(password, results[0].passwordHash)) {
+                //Generate a new token
+                const token = utils.generateToken({
+                    email: results[0].email,
+                    uuid: results[0].uuid
+                });
+                return res.status(200).json({error: false, token});
+            }
+        }
+        return responseStatus.sendError(res, 'Invalid login credentials');
+    });
+});
+
 //create user
 export const create = ((req, res) => {
     let {email, password} = req.body;

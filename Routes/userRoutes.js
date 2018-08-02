@@ -8,4 +8,10 @@ router.post('/', (req, res) => {
     user.create(req, res);
 });
 
+//Login user
+router.post('/login', (req, res) => {
+    user.login(req, res);
+});
+
+
 export default router;
