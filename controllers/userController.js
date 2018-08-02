@@ -72,13 +72,12 @@ export const create = ((req, res) => {
                         //Release the connection back to the pool
                         connection.release();
 
-                        console.log('Error creating user', error);
                         return responseStatus.sendError(res, 'Error creating user', 500);
                     }
 
                     //Release the connection back to the pool
                     connection.release();
-                    res.json({error: false, user: { id: results.insertId }});
+                    res.json({error: false, user: { id: user.uuid }});
                 });
             }
         });

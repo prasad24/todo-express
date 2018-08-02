@@ -2,7 +2,6 @@ import * as utils from '../lib/utils';
 import * as responseStatus from '../lib/responseStatus';
 
 const validateToken = (req, res, next) => {
-    console.log(req.url);
     if((req.url.indexOf("/user") > 0) &&
         req.method === "POST") {
         //allow this route: POST /user (creation of new user - Only route allowed without authentication)
@@ -14,6 +13,7 @@ const validateToken = (req, res, next) => {
         if(!user && !user.email) {
             return responseStatus.sendError(res, 'Invalid Auth Token');
         }
+        req.user = user;
         next();
     } else {
         return responseStatus.sendError(res, 'Invalid Auth Token');

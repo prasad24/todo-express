@@ -1,24 +1,27 @@
 import pool from '../lib/database';
 import * as utils from '../lib/utils';
+import * as responseStatus from '../lib/responseStatus';
+import uuid from 'uuid/v1';
 
 //Update todo by id
 export const update = ((req, res) => {
 
     const {id} = req.params;
     const {message, completed, completeBy} = req.body;
+    const {user} = req;
     const todo = {};
 
     if(!id) {
-        return res.status(400).json({error: true, message: 'Invalid id'});
+        return responseStatus.sendError(res, 'Invalid id');
     }
 
     if(!message && !completed && !completeBy) {
-        return res.status(400).json({error:true, message: 'Invalid data'});
+        return responseStatus.sendError(res, 'Invalid data');
     }
 
     if(message !== "undefined") {
         if(message.trim() === '') {
-            return res.status(400).json({error:true, message: 'Invalid message'});
+            return responseStatus.sendError(res, 'Invalid message');
         } else {
             todo.message = message;
         }
@@ -32,20 +35,20 @@ export const update = ((req, res) => {
         if(utils.isValidDate(completeBy)) {
             todo.completeBy = completeBy;
         } else {
-            return res.status(400).json({error: true, message: 'Invalid completeBy date'});
+            return responseStatus.sendError(res, 'Invalid completeBy date');
         }
     }
 
     todo.dateUpdated = new Date();
 
-    pool.query("update todo set ? where id = ?", [todo, id], (error, result, field) => {
+    pool.query("update todo set ? where uuid = ? and userUUID=?", [todo, id, user.uuid], (error, result, field) => {
         if(error) {
             console.log(`error updating todo {id}`, error);
-            return res.status(500).json({error: true, message: 'Unable to update todo'});
+            return responseStatus.sendError(res, 'Unable to update todo', 500);
         }
 
         if(result.affectedRows === 0) {
-            return res.status(400).json({error: true, message: 'Cannot find todo!'});
+            return responseStatus.sendError(res, 'Cannot find todo');
         }
         res.status(200).json({error: false});
     });
@@ -55,19 +58,20 @@ export const update = ((req, res) => {
 export const remove = ((req, res) => {
 
     const {id} = req.params;
+    const {user} = req;
 
     if(!id) {
-        return res.status(400).json({error: true, message: 'Invalid id'});
+        return responseStatus.sendError(res, 'Invalid id');
     }
 
-    pool.query("delete from todo where id = ?", id, (error, result, field) => {
+    pool.query("delete from todo where uuid = ? and userUUID=?", [id, user.uuid], (error, result, field) => {
         if(error) {
             console.log(`error deleting todo {id}`, error);
-            return res.status(500).json({error: true, message: 'Unable to delete todo'});
+            return responseStatus.sendError(res, 'Unable to delete todo', 500);
         }
 
         if(result.affectedRows === 0) {
-            return res.status(400).json({error: true, message: 'Cannot find todo!'});
+            return responseStatus.sendError(res, 'Cannot find todo');
         }
         res.status(200).json({error: false});
     });
@@ -77,26 +81,42 @@ export const remove = ((req, res) => {
 export const getById = ((req, res) => {
 
     const {id} = req.params;
+    const {user} = req;
 
-    pool.query("select * from todo where id = ?", id, (error, result, field) => {
+    console.log(id, user.uuid);
+
+    pool.query("select * from todo where uuid = ? and userUUID=?", [id, user.uuid], (error, result, field) => {
         if(error) {
             console.log(`error getting todo {id}`, error);
-            return res.status(500).json({error: true, message: 'Unable to get todo'});
+            return responseStatus.sendError(res, 'Unable to get todo', 500);
         }
-
-        res.status(200).json({error: false, data: result});
+        const processedResult = result.map(todo => {
+            delete todo.id;
+            delete todo.userUUID;
+            todo.completed = todo.completed ? true : false;
+            return todo;
+        })
+        res.status(200).json({error: false, data: processedResult});
     });
 });
 
 
 //Get all todos.
 export const getAll = ((req, res) => {
-    pool.query("select * from todo", (error, result, field) => {
+    const {user} = req;
+    pool.query("select * from todo where userUUID=?", user.uuid, (error, result, field) => {
         if(error) {
             console.log(`error getting all todos`, error);
-            return res.status(500).json({error: true, message: 'Unable to get todos'});
+            return responseStatus.sendError(res, 'Unable to get todo', 500);
         }
-        res.status(200).json({error: false, data: result});
+        //remove the id from the result
+        const processedResult = result.map(todo => {
+            delete todo.id;
+            delete todo.userUUID;
+            todo.completed = todo.completed ? true : false;
+            return todo;
+        })
+        res.status(200).json({error: false, data: processedResult});
     });
 });
 
@@ -105,13 +125,14 @@ export const getAll = ((req, res) => {
 export const create = ((req, res) => {
 
     const todo = req.body;
+    const {user} = req;
 
     if(!todo) {
-        return res.status(400).json({error:true, message: 'Invalid data'});
+        return responseStatus.sendError(res, 'Invalid data');
     }
 
     if(!todo.message.trim()) {
-        return res.status(400).json({error:true, message: 'Invalid message'});
+        return responseStatus.sendError(res, 'Invalid message');
     }
 
     //If complete is not provided, set it as false
@@ -119,13 +140,19 @@ export const create = ((req, res) => {
         todo.completed = false;
     }
 
+    //Generate a uuid for the todo
+    todo.uuid = uuid();
+
+    //Add user uuid to todo
+    todo.userUUID = user.uuid;
+
     pool.query("insert into todo SET ?", todo, (error, result, field) => {
         if(error) {
             console.log(`error inserting todo`, error);
-            return res.status(500).json({error: true, message: 'Unable to add the todo'});
+            return responseStatus.sendError(res, 'Unable to add todo', 500);
         }
 
-        res.status(201).json({error: false, id: result.insertId});
+        res.status(201).json({error: false, id: todo.uuid});
     });
     //OR by creating a new connection
     // pool.getConnection((error, connection) => {
